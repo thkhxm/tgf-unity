@@ -3,22 +3,22 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using AOT;
 using UnityEngine;
 using YooAsset;
- 
+
+namespace AOT
+{
+    
+
 public class LoadDll : MonoBehaviour
 {
  
     // 资源系统运行模式
     public EPlayMode PlayMode = EPlayMode.EditorSimulateMode;
- 
-    //CDN地址
-    public string DefaultHostServer = "http://192.168.1.90/hfs/";
-    public string FallbackHostServer = "http://192.168.1.90/hfs/";
- 
-    public string HotDllName = "HotFix.dll";
- 
- 
+
+    [SerializeField] public GlobalConfig Config;
+
     //补充元数据dll的列表，Yooasset中不需要带后缀
     public static List<string> AOTMetaAssemblyNames { get; } = new List<string>()
     {
@@ -33,8 +33,14 @@ public class LoadDll : MonoBehaviour
     {
         return s_assetDatas[dllName];
     }
- 
- 
+
+
+    private void Awake()
+    {
+        DontDestroyOnLoad(this);
+    }
+
+
     void Start()
     {
         //初始化BetterStreamingAssets插件
@@ -51,7 +57,7 @@ public class LoadDll : MonoBehaviour
         YooAssets.Initialize();
  
         // 创建默认的资源包
-        var package = YooAssets.CreatePackage("DefaultPackage");
+        var package = YooAssets.CreatePackage(Config.YooAssetPackageName);
  
         // 设置该资源包为默认的资源包，可以使用YooAssets相关加载接口加载该资源包内容。
         YooAssets.SetDefaultPackage(package);
@@ -60,7 +66,7 @@ public class LoadDll : MonoBehaviour
         {
             //编辑器模拟模式
             var initParameters = new EditorSimulateModeParameters();
-            initParameters.SimulateManifestFilePath = EditorSimulateModeHelper.SimulateBuild("DefaultPackage");
+            initParameters.SimulateManifestFilePath = EditorSimulateModeHelper.SimulateBuild(Config.YooAssetPackageName);
             yield return package.InitializeAsync(initParameters);
         }
         else if (PlayMode == EPlayMode.HostPlayMode)
@@ -68,8 +74,8 @@ public class LoadDll : MonoBehaviour
             //联机运行模式
             var initParameters = new HostPlayModeParameters();
             initParameters.QueryServices = new QueryStreamingAssetsFileServices();
-            initParameters.DefaultHostServer = DefaultHostServer;
-            initParameters.FallbackHostServer = FallbackHostServer;
+            initParameters.DefaultHostServer = Config.DefaultHostServer;
+            initParameters.FallbackHostServer = Config.FallbackHostServer;
             yield return package.InitializeAsync(initParameters);
         }
         else if (PlayMode == EPlayMode.OfflinePlayMode)
@@ -114,7 +120,7 @@ public class LoadDll : MonoBehaviour
         //热更新Dll名称
         var Allassets = new List<string>
         {
-            HotDllName,
+            Config.HotDllName,
  
         }.Concat(AOTMetaAssemblyNames);
         foreach (var asset in Allassets)
@@ -136,7 +142,7 @@ public class LoadDll : MonoBehaviour
         int downloadingMaxNum = 10;
         int failedTryAgain = 3;
         int timeout = 60;
-        var package = YooAssets.GetPackage("DefaultPackage");
+        var package = YooAssets.GetPackage(Config.YooAssetPackageName);
         var downloader = package.CreateResourceDownloader(downloadingMaxNum, failedTryAgain, timeout);
  
         //没有需要下载的资源
@@ -234,20 +240,30 @@ public class LoadDll : MonoBehaviour
     #endregion
  
     void StartGame()
-    {
+    { 
         LoadMetadataForAOTAssemblies();
- 
 #if !UNITY_EDITOR
-        System.Reflection.Assembly.Load(GetAssetData("Hotfix.dll"));
+        System.Reflection.Assembly.Load(GetAssetData(HotDllName));
+        // System.Reflection.Assembly.Load(GetAssetData("Hotfix.dll"));
 #endif
         //委托加载方式，加载prefab
-        var package = YooAssets.GetPackage("DefaultPackage");
-        AssetOperationHandle handle = package.LoadAssetAsync<GameObject>("Main");
+        var package = YooAssets.GetPackage(Config.YooAssetPackageName);
+        
+        // foreach (var configInitManagerName in config.InitManagerNames)
+        // {
+        //     AssetOperationHandle handle = package.LoadAssetAsync<GameObject>(configInitManagerName);
+        //     handle.Completed += Handle_Completed;
+        // }
+        
+        // //加载netmanager
+        
+        var handle = package.LoadAssetAsync<GameObject>("MainPanel");
         handle.Completed += Handle_Completed;
     }
     private void Handle_Completed(AssetOperationHandle obj)
     {
-        GameObject go = obj.InstantiateSync();
+        var parentTransform = GameObject.FindWithTag("ui").transform;
+        var go = obj.InstantiateSync(parentTransform);
         Debug.Log($"Prefab name is {go.name}");
     }
  
@@ -269,4 +285,5 @@ public class LoadDll : MonoBehaviour
             Debug.Log($"LoadMetadataForAOTAssembly:{aotDllName}. mode:{mode} ret:{err}");
         }
     }
+}
 }

@@ -19,6 +19,10 @@ namespace HotFix.MainPanel
     {
         [SerializeField]
         private Button _loginBtn;
+        [SerializeField]
+        private Button _logoutBtn;
+
+        
         
         private void Start()
         {
@@ -28,6 +32,8 @@ namespace HotFix.MainPanel
             this.GetModel<ServerModel>().ServerAddress = globalConfig.ServerAddress;
             //登录点击command
             _loginBtn.onClick.AddListener(this.SendCommand<LoginCommand>);
+            //登出点击事件
+            _loginBtn.onClick.AddListener(this.SendCommand<LogoutCommand>);
         }
 
         private void OnDestroy()

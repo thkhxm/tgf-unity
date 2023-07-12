@@ -5,10 +5,18 @@
 // **Desc:
 // *******************************************************************/
 
+using HotFix.Code;
+using NotImplementedException = System.NotImplementedException;
+
 namespace HotFix.MainPanel.System
 {
-    public class LoadGameSystem
+    public class LoadGameSystem:AbstractSystem
     {
+        
+        protected override void OnInit()
+        {
+                
+        }
         
     }
 }

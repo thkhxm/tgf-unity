@@ -294,7 +294,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _loginBtn: {fileID: 6042633128398896173}
-  _logoutBtn: {fileID: 0}
+  _logoutBtn: {fileID: 7309866109976697642}
 --- !u!1 &1794881952157273970
 GameObject:
   m_ObjectHideFlags: 0

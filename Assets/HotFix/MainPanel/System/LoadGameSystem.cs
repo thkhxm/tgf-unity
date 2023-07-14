@@ -6,7 +6,6 @@
 // *******************************************************************/
 
 using HotFix.Code;
-using NotImplementedException = System.NotImplementedException;
 
 namespace HotFix.MainPanel.System
 {
@@ -15,7 +14,7 @@ namespace HotFix.MainPanel.System
         
         protected override void OnInit()
         {
-                
+            
         }
         
     }

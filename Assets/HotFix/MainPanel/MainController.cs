@@ -11,11 +11,12 @@ using HotFix.Code;
 using HotFix.MainPanel.Command;
 using HotFix.MainPanel.Model;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace HotFix.MainPanel
 {
-    public class MainController : MonoBehaviour,IController
+    public class MainController : ViewController
     {
         [SerializeField]
         private Button _loginBtn;
@@ -23,8 +24,7 @@ namespace HotFix.MainPanel
         private Button _logoutBtn;
 
         
-        
-        private void Start()
+        protected override void InitStart()
         {
             //找到globalConfig
             var globalConfig = GameObject.FindWithTag("load").GetComponent<LoadDll>().Config;
@@ -33,18 +33,33 @@ namespace HotFix.MainPanel
             //登录点击command
             _loginBtn.onClick.AddListener(this.SendCommand<LoginCommand>);
             //登出点击事件
-            _loginBtn.onClick.AddListener(this.SendCommand<LogoutCommand>);
+            _logoutBtn.onClick.AddListener(this.SendCommand<LogoutCommand>);
         }
 
         private void OnDestroy()
         {
             this.SendCommand<LogoutCommand>();
         }
-
-        public IArchitecture GetArchitecture()
+        
+        protected override void InitEvent()
         {
-            return CodeArchitecture.Interface;
-            
+            this.RegisterEvent<LoginEvent>(e =>
+            {
+                if (e.Success)
+                {
+                    SceneManager.LoadScene("Scenes/Game");
+                }
+                else
+                {
+                    Debug.Log("[login] 登录失败");
+                }
+            }).UnRegisterWhenGameObjectDestroyed(this);
         }
+        
+        public struct LoginEvent
+        {
+            public bool Success{ get; set; }
+        }
+        
     }
 }

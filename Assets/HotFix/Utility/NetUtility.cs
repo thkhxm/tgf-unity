@@ -6,9 +6,14 @@
 // *******************************************************************/
 
 using System;
+using System.Collections.Generic;
+using System.IO;
+using AOT;
+using Google.Protobuf;
 using HotFix.Code;
 using UnityEngine;
 using WebSocketSharp;
+using ErrorEventArgs = WebSocketSharp.ErrorEventArgs;
 
 namespace HotFix.Utility
 {
@@ -18,40 +23,62 @@ namespace HotFix.Utility
         private WebSocket ws;
         
         
-        public EasyEvent<byte[]> revcoerEvent;
+        private Dictionary<string,EasyEvent<ByteString>>  revcoerEvent = new();
         
         private void OnOpen(object sender, EventArgs e)
         {
-            Debug.Log("WebSocket 连接已打开");
+            Log.I("WebSocket 连接已打开");
         }
-        
-        
-        
+
         private void OnMessage(object sender, MessageEventArgs e)
         {
             // [1][1][2][4][n][n]
             // message type|compress|request method name size|data size|method name|data
-            Debug.Log("收到消息: " + e.RawData);
+            Log.D($"收到消息 {BitConverter.ToString(e.RawData)}");
+            var stream = new MemoryStream(e.RawData);
+
+            // 读取数组的第一位
+            var first = (byte)stream.ReadByte();
+            if (first == 2)
+            {
+                // 读取数组的剩余数据
+                var remaining = new byte[e.RawData.Length-1];
+                stream.Read(remaining);
+                var res = WSResponse.Parser.ParseFrom(remaining);
+                revcoerEvent[res.MessageType].Trigger(res.Data);
+            }else{
+                Log.W("[ws] 接收到错误的协议");
+            }
         }
         
         private void OnError(object sender, ErrorEventArgs e)
         {
-            Debug.LogError("WebSocket 错误: " + e.Message);
+            Log.W("WebSocket 错误: " + e.Message);
         }
         
         private void OnClose(object sender, CloseEventArgs e)
         {
-            Debug.Log("WebSocket 连接已关闭");
+            Log.I("WebSocket 连接已关闭");
         }
         
-        public void Send(byte[] data)
+        public EasyEvent<ByteString> Send(Api api ,byte[] data)
         {
-            ws.Send(data);
+            var req = api.NewMessage(data);
+            ws.Send(req.ToByteArray());
+            Log.D($"[ws] 发送请求 {api.ServiceName} - data {BitConverter.ToString(data)}");
+
+            return revcoerEvent.GetValueOrDefault(api.RequestName, new EasyEvent<ByteString>());
         }
         
         
         public void Connect(string serverAddress)
         {
+
+            if (ws is { IsAlive: true })
+            {
+                return;
+            }
+            
             // 连接 WebSocket 服务器
             ws = new WebSocket(serverAddress);
         
@@ -66,7 +93,7 @@ namespace HotFix.Utility
         public void Close()
         {
             // 断开 WebSocket 连接
-            if (ws != null && ws.ReadyState == WebSocketState.Open)
+            if (ws is { ReadyState: WebSocketState.Open })
             {
                 ws.Close();
             }

@@ -10,6 +10,7 @@ using Google.Protobuf;
 using HotFix.Code;
 using HotFix.MainPanel.Model;
 using HotFix.Utility;
+using UnityEngine;
 
 namespace HotFix.MainPanel.Command
 {
@@ -21,14 +22,13 @@ namespace HotFix.MainPanel.Command
             var nt = this.GetUtility<NetUtility>();
             nt.Connect(serverAddress);
             var req = new LoginReq { Account = "tim", Password = "123" };
-            var loginReq = ServerApi.Login.NewMessage(req.ToByteArray());
-            nt.Send(loginReq.ToByteArray());
-            this.SendEvent<LoginResEvent>();
+            nt.Send(ServerApi.Login, req.ToByteArray()).Register(res =>
+            {
+                Debug.Log($"[login] 用户 {req} 登录成功");
+                var e = new MainController.LoginEvent {Success = true};
+                this.SendEvent(e);
+            },true);
         }
     }
-
-    public struct LoginResEvent
-    {
-        
-    }
+    
 }

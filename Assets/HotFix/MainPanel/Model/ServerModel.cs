@@ -12,7 +12,8 @@ namespace HotFix.MainPanel.Model
     public class ServerModel:AbstractModel
     {
         public string ServerAddress { get; set; }
-
+        
+        
         protected override void OnInit()
         {
             

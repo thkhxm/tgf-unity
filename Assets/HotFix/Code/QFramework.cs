@@ -851,10 +851,11 @@ using UnityEngine;
     public class EasyEvent : IEasyEvent
     {
         private Action mOnEvent = () => { };
-
-        public IUnRegister Register(Action onEvent)
+        private bool onec;
+        public IUnRegister Register(Action onEvent,bool onec =false)
         {
             mOnEvent += onEvent;
+            this.onec = onec;
             return new CustomUnRegister(() => { UnRegister(onEvent); });
         }
 
@@ -866,16 +867,22 @@ using UnityEngine;
         public void Trigger()
         {
             mOnEvent?.Invoke();
+            if (onec)
+            {
+                UnRegister(mOnEvent);
+            }
         }
     }
 
     public class EasyEvent<T> : IEasyEvent
     {
         private Action<T> mOnEvent = e => { };
+        private bool onec;
 
-        public IUnRegister Register(Action<T> onEvent)
+        public IUnRegister Register(Action<T> onEvent,bool onec = false)
         {
             mOnEvent += onEvent;
+            this.onec = onec;
             return new CustomUnRegister(() => { UnRegister(onEvent); });
         }
 
@@ -887,16 +894,22 @@ using UnityEngine;
         public void Trigger(T t)
         {
             mOnEvent?.Invoke(t);
+            if (onec)
+            {
+                UnRegister(mOnEvent);
+            }
         }
     }
 
     public class EasyEvent<T, K> : IEasyEvent
     {
         private Action<T, K> mOnEvent = (t, k) => { };
+        private bool onec;
 
-        public IUnRegister Register(Action<T, K> onEvent)
+        public IUnRegister Register(Action<T, K> onEvent,bool onec = false)
         {
             mOnEvent += onEvent;
+            this.onec = onec;
             return new CustomUnRegister(() => { UnRegister(onEvent); });
         }
 
@@ -908,16 +921,22 @@ using UnityEngine;
         public void Trigger(T t, K k)
         {
             mOnEvent?.Invoke(t, k);
+            if (onec)
+            {
+                UnRegister(mOnEvent);
+            }
         }
     }
 
     public class EasyEvent<T, K, S> : IEasyEvent
     {
         private Action<T, K, S> mOnEvent = (t, k, s) => { };
+        private bool onec;
 
-        public IUnRegister Register(Action<T, K, S> onEvent)
+        public IUnRegister Register(Action<T, K, S> onEvent,bool onec = false)
         {
             mOnEvent += onEvent;
+            this.onec = onec;
             return new CustomUnRegister(() => { UnRegister(onEvent); });
         }
 
@@ -929,6 +948,10 @@ using UnityEngine;
         public void Trigger(T t, K k, S s)
         {
             mOnEvent?.Invoke(t, k, s);
+            if (onec)
+            {
+                UnRegister(mOnEvent);
+            }
         }
     }
 
